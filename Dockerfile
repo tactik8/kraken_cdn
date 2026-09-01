@@ -14,10 +14,10 @@ RUN npm ci --only=production
 COPY . .
 
 # Expose the port the Express app runs on
-EXPOSE 3000
+EXPOSE 3012
 
 # Run the app as a non-root user for security
 USER node
 
 # Command to start the server
-CMD ["node", "server.js"]
+CMD ["node", "./src/server.js"]
