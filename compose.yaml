@@ -1,7 +1,7 @@
-name: file-upload-service
+name: kraken_cdn
 
 services:
-  upload-api:
+  kraken_cdn:
     build:
       context: .
       dockerfile: Dockerfile
