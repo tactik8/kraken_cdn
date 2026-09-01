@@ -17,19 +17,22 @@ const BASE_UPLOAD_DIR = path.join(__dirname, 'uploads');
 const storage = multer.diskStorage({
   destination: async (req, file, cb) => {
     try {
-      // Access the named parameter 'folderPath'
-      const rawFolderPath = req.params.folderPath || '';
+      // 1. Extract parameter from req.params
+      const paramVal = req.params.folderPath || req.params[0] || '';
 
-      // Normalize and sanitize path to prevent Directory Traversal attacks (e.g. ../../)
+      // 2. Safely join Array elements into a single path string if it's an Array
+      const rawFolderPath = Array.isArray(paramVal) ? paramVal.join('/') : String(paramVal);
+
+      // 3. Normalize and sanitize path
       const safeRelativePath = path.normalize(rawFolderPath).replace(/^(\.\.[\/\\])+/, '');
       const targetDir = path.join(BASE_UPLOAD_DIR, safeRelativePath);
 
-      // Verify target directory remains inside BASE_UPLOAD_DIR
+      // 4. Verify target directory stays within BASE_UPLOAD_DIR
       if (!targetDir.startsWith(BASE_UPLOAD_DIR)) {
         return cb(new Error('Invalid destination path: Outside allowed upload directory.'), null);
       }
 
-      // Create deeply nested directories if they don't exist
+      // 5. Create directories recursively
       await fs.mkdir(targetDir, { recursive: true });
 
       cb(null, targetDir);
@@ -55,7 +58,6 @@ app.get('/', (req, res) => {
   });
 });
 
-// FIXED: Named wildcard parameter /*folderPath
 app.post('/api/upload/single/*folderPath', upload.single('file'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded.' });
@@ -63,8 +65,13 @@ app.post('/api/upload/single/*folderPath', upload.single('file'), (req, res) => 
 
   const { originalname, filename, path: filePath, size } = req.file;
 
+  // Convert array to string for response display
+  const folderStr = Array.isArray(req.params.folderPath)
+    ? req.params.folderPath.join('/')
+    : req.params.folderPath;
+
   res.status(200).json({
-    message: `File uploaded successfully to path '/${req.params.folderPath}'`,
+    message: `File uploaded successfully to path '/${folderStr}'`,
     file: {
       originalName: originalname,
       storedName: filename,
